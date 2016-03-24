@@ -16,7 +16,7 @@ var sz = 'small',
 //pxGrpSize is how many pixels we group together as the markov 'words'. larger groups means a better chance of meaningful predictions, but at the same time
 //also means a chance of no matches whatsoever.
 var ctx = canvas.getContext('2d');
-currImg.crossOrigin = 'anonymous';
+currImg.setAttribute('crossOrigin','anonymous');
 var getPics = function(num) {
     markObjs = {};
     imgArr = [];
@@ -33,6 +33,7 @@ var getPics = function(num) {
         imgUrls = [];
     }
     var theUrl = 'https://www.googleapis.com/customsearch/v1?key=AIzaSyAKJJLiYq5NUL5GIgNSv_akeceClwi7MPk&cx=13117340402592336685:p37mtp7h38a&searchType=image&start=' + num + '&imgSize=' + sz + '&q=' + query;
+    theUrl='invalid'
     $.get(theUrl).success(function(res) {
         for (var i = 0; i < res.items.length; i++) {
             if ((res.items[i].image.height / res.items[i].image.width) > .9 && (res.items[i].image.height / res.items[i].image.width) < 1.1) {
@@ -44,19 +45,22 @@ var getPics = function(num) {
             num += 10;
             getPics(num)
         } else {
+            console.log('done loading imgs from google. Running image analysis. List of imgUrls', imgUrls);
             currImg.src = imgUrls[imNum];
+            console.log('attempt pic:', imgUrls[imNum], currImg)
         }
     }).error(function(err) {
-      //if google says "enuff!", use lorem pixel as alternative
+        //if google says "enuff!", use lorem pixel as alternative
         console.log('google failed, using lorempixel!')
-        for (var i = 0; i < 6; i++) {
+        for (var i = 0; i < 10; i++) {
             imgUrls.push('http://lorempixel.com/80/80/people/')
         }
         currImg.src = imgUrls[imNum];
     })
 }
-currImg.addEventListener("load", function() {
+currImg.onload = function(e) {
     // execute drawImage statements here
+    console.log('img loaded',currImg.src)
     ctx.drawImage(currImg, 0, 0, canvas.width, canvas.height);
     var isFF = navigator.userAgent.indexOf('Firefox') !== -1;
     if (isFF) {
@@ -65,12 +69,13 @@ currImg.addEventListener("load", function() {
         //this demo wont work in anything but FF, due to restraints on dirty canvases (hawt).
         alert('Please use Firefox for this demo!');
     }
-});
+};
 var getPx = function(currImg) {
     var h = currImg.height,
         w = currImg.width,
         x = 0,
         y = 0;
+    //put it on the localStorage to avoid cors stuff
     var imgData = ctx.getImageData(x, y, w, h).data;
     imgArr = []; //clear the array
     for (var i = 0; i < imgData.length - 4; i += 4) {
@@ -171,21 +176,21 @@ var paintImage = function() {
         }
     }
 };
-var trigMod = function(m){
-  m = parseInt(m)||0;
-  if (!m){
-    $('#explModal .modal-title').html('Group Size');
-    $('#explModal .modal-body').html('The group size refers to how large each Markov chain \'group\' is. Larger groups increase the chance of meaningful predictions, but may decrease the odds of <i>any</i> predictions. If your sample is extremely low, you may want to stick with smaller group sizes.');
-  }else{
-    $('#explModal .modal-title').html('Markov Chain Size');
-    $('#explModal .modal-body').html('The Markov chain size refers to how many pixels the app will attempt to \'draw\'. Larger sizes take vastly more time to draw, so be careful! Start small and THEN work your way up.');
-  }
-  $('#explModal').modal()
+var trigMod = function(m) {
+    m = parseInt(m) || 0;
+    if (!m) {
+        $('#explModal .modal-title').html('Group Size');
+        $('#explModal .modal-body').html('The group size refers to how large each Markov chain \'group\' is. Larger groups increase the chance of meaningful predictions, but may decrease the odds of <i>any</i> predictions. If your sample is extremely low, you may want to stick with smaller group sizes.');
+    } else {
+        $('#explModal .modal-title').html('Markov Chain Size');
+        $('#explModal .modal-body').html('The Markov chain size refers to how many pixels the app will attempt to \'draw\'. Larger sizes take vastly more time to draw, so be careful! Start small and THEN work your way up.');
+    }
+    $('#explModal').modal()
 }
 
-$('#grpSize').change(function(){
-  pxGrpSize = parseInt($('#grpSize').val);
+$('#grpSize').change(function() {
+    pxGrpSize = parseInt($('#grpSize').val);
 })
-$('#chainSize').change(function(){
-  markLen = parseInt($('#chainSize').val);
+$('#chainSize').change(function() {
+    markLen = parseInt($('#chainSize').val);
 })

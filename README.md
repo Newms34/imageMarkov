@@ -45,3 +45,5 @@ This is an experiment with [Markov chains](https://en.wikipedia.org/wiki/Markov_
  Q. Can't I just run it off of github?
 
  A. You could, but... then I'd have to delete it from github. Please don't. Running it off of github is gonna make them hate me (for the data rates involved). Don't make github hate me.
+
+NOTE: Currently, some CORS nonsense is preventing me from loading images from the google search API. I MAY need to convert this to a full-stack app and temporarily store images on the server. Adding `currImg.setAttribute('crossOrigin','anonymous');` allows loading of lorempixel images, but still does not allow google images. I've disabled the google image search for now.
