@@ -29,7 +29,7 @@ This is an experiment with [Markov chains](https://en.wikipedia.org/wiki/Markov_
 ##How It Doesn't Work
  Q. It says I need to use Firefox!
  
- A. So... why aren't you using Firefox? If you're wondering, a security 'feature' in Chrome and Safari prevents getting data from 'dirty' canvases - that is, canvases that have had stuff put on them from outside sources. So Firefox is our only real option here.
+ A. So... why aren't you using Firefox? Seriously, Firefox is [not bad](http://www.pcworld.com/article/2605933/browser-comparison-how-the-five-leaders-stack-up-in-speed-ease-of-use-and-more.html). If you're wondering, a security 'feature' in Chrome and Safari prevents getting data from 'dirty' canvases - that is, canvases that have had stuff put on them from outside sources. So Firefox is our only real option here.
  
  
  Q. I think it crashed!
