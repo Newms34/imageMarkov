@@ -28,10 +28,15 @@ This is an experiment with [Markov chains](https://en.wikipedia.org/wiki/Markov_
 
 ##How It Doesn't Work
  Q. It says I need to use Firefox!
+ 
  A. So... why aren't you using Firefox? If you're wondering, a security 'feature' in Chrome and Safari prevents getting data from 'dirty' canvases - that is, canvases that have had stuff put on them from outside sources. So Firefox is our only real option here.
  
+ 
  Q. I think it crashed!
+ 
  A. Notice how small the images are? That's because if they were any bigger, the script WOULD really crash. As it has, the initial imageData array is at LEAST 19,200 elements long. Each 'analysis' step takes multiple calculations and loops, so it's slow! Be patient! Eventually I'll slap a progress bar in there somewhere.
  
+ 
  Q. It doesn't really look like anything!
+ 
  A. This isn't supposed to be the next Monet. It's an examination of the theory. Translation: I suck @ art.
