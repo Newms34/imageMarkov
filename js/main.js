@@ -4,14 +4,14 @@ var sz = 'small',
     currImg = new Image(),
     currPxData,
     imNum = 0,
-    googleOkay = false,
     imgArr = [],
     pxGrpSize = 2,
     markObjs = {},
     markLen = 5000,
     currMarkNum = 0,
-    fullMarks = '';
-//googleOkay controls whether we're using the google api or not. If the API says 403 (we've overused it), we use lorempixel instead.
+    fullMarks = '',
+    goodBad = [0, 0];
+
 //imgArr is an array holding the  objects which represent each pixel.
 //pxGrpSize is how many pixels we group together as the markov 'words'. larger groups means a better chance of meaningful predictions, but at the same time
 //also means a chance of no matches whatsoever.
@@ -23,36 +23,37 @@ var getPics = function(num) {
     imNum = 0;
     currMarkNum = 0;
     fullMarks = '';
-    if (googleOkay) {
-        console.log('using google!')
-        var query = $('#query').val()
-        num = parseInt(num);
-        if (num == 1) {
-            imNum = 0;
-            $('#picResBox').html('');
-            imgUrls = [];
-        }
-        var theUrl = 'https://www.googleapis.com/customsearch/v1?key=AIzaSyAKJJLiYq5NUL5GIgNSv_akeceClwi7MPk&cx=13117340402592336685:p37mtp7h38a&searchType=image&start=' + num + '&imgSize=' + sz + '&q=' + query;
-        $.get(theUrl, function(res) {
-            for (var i = 0; i < res.items.length; i++) {
-                if ((res.items[i].image.height / res.items[i].image.width) > .9 && (res.items[i].image.height / res.items[i].image.width) < 1.1) {
-                    //we only one images that are vaguely square.
-                    imgUrls.push(res.items[i].link);
-                }
-            }
-            if (!num || num < 50) {
-                num += 10;
-                getPics(num)
-            } else {
-                currImg.src = imgUrls[imNum];
-            }
-        })
-    } else {
-        //using lorempixel! 
-        console.log('using lorempixel!')
-        imgUrls = ['http://lorempixel.com/80/80/people/', 'http://lorempixel.com/80/80/nature/', 'http://lorempixel.com/80/80/food/'];
-        currImg.src = imgUrls[imNum];
+    goodBad = [0, 0];
+    console.log('trying google!')
+    var query = $('#query').val()
+    num = parseInt(num);
+    if (num == 1) {
+        imNum = 0;
+        $('#picResBox').html('');
+        imgUrls = [];
     }
+    var theUrl = 'https://www.googleapis.com/customsearch/v1?key=AIzaSyAKJJLiYq5NUL5GIgNSv_akeceClwi7MPk&cx=13117340402592336685:p37mtp7h38a&searchType=image&start=' + num + '&imgSize=' + sz + '&q=' + query;
+    $.get(theUrl).success(function(res) {
+        for (var i = 0; i < res.items.length; i++) {
+            if ((res.items[i].image.height / res.items[i].image.width) > .9 && (res.items[i].image.height / res.items[i].image.width) < 1.1) {
+                //we only one images that are vaguely square.
+                imgUrls.push(res.items[i].link);
+            }
+        }
+        if (!num || num < 20) {
+            num += 10;
+            getPics(num)
+        } else {
+            currImg.src = imgUrls[imNum];
+        }
+    }).error(function(err) {
+      //if google says "enuff!", use lorem pixel as alternative
+        console.log('google failed, using lorempixel!')
+        for (var i = 0; i < 6; i++) {
+            imgUrls.push('http://lorempixel.com/80/80/people/')
+        }
+        currImg.src = imgUrls[imNum];
+    })
 }
 currImg.addEventListener("load", function() {
     // execute drawImage statements here
@@ -72,7 +73,7 @@ var getPx = function(currImg) {
         y = 0;
     var imgData = ctx.getImageData(x, y, w, h).data;
     imgArr = []; //clear the array
-    for (var i = 0; i < imgData.length - 4; i += 3) {
+    for (var i = 0; i < imgData.length - 4; i += 4) {
         imgArr.push({
             r: imgData[i],
             g: imgData[i + 1],
@@ -104,17 +105,20 @@ var generateMarkov = function(arr) {
             markObjs[arr[i]][arr[i + 1]]++;
         }
     }
-    console.log('markObjs after this image', markObjs)
+    console.log('markObjs after this image (' + imgUrls[imNum] + ')', markObjs)
     imNum++;
     if (imgUrls[imNum]) {
         currImg.src = imgUrls[imNum];
     } else {
         //no more pics to analyze, so we can go ahead and make the markov-generated string.
         var seed = Object.keys(markObjs)[Math.floor(Math.random() * Object.keys(markObjs).length)]; //pick a random start seed
+        console.log('done generating markov objs!')
         doMark(seed);
     }
 }
+
 var doMark = function(seed) {
+    //this function takes the markov 'chain' object (created in generateMarkov) and generates output based on that markov chain
     for (currMark = 0; currMark < markLen; currMark++) {
         fullMarks += seed;
         var theWord = markObjs[seed];
@@ -132,7 +136,14 @@ var doMark = function(seed) {
         seed = finalFollow[Math.floor(Math.random() * finalFollow.length)];
         if (!markObjs[seed]) {
             seed = Object.keys(markObjs)[Math.floor(Math.random() * Object.keys(markObjs).length)];
+            goodBad[1]++;
+        } else {
+            //seed DOES exist
+            goodBad[0]++;
         }
+    }
+    if ((goodBad[1] / goodBad[0]) > (1 / 3)) {
+        alert('Warning: Unusually high random color seeking! Try increasing the markov unit size!')
     }
     console.log('markov generated:', fullMarks)
     paintImage();
@@ -154,12 +165,27 @@ var paintImage = function() {
         ctx.fillStyle = "rgb(" + currRGB[0] + "," + currRGB[1] + "," + currRGB[2] + ")";
         ctx.fillRect(x, y, 1, 1);
         x++;
-        if (x >= w-4) {
+        if (x >= w) {
             y++;
             x = 0;
         }
     }
 };
+var trigMod = function(m){
+  m = parseInt(m)||0;
+  if (!m){
+    $('#explModal .modal-title').html('Group Size');
+    $('#explModal .modal-body').html('The group size refers to how large each Markov chain \'group\' is. Larger groups increase the chance of meaningful predictions, but may decrease the odds of <i>any</i> predictions. If your sample is extremely low, you may want to stick with smaller group sizes.');
+  }else{
+    $('#explModal .modal-title').html('Markov Chain Size');
+    $('#explModal .modal-body').html('The Markov chain size refers to how many pixels the app will attempt to \'draw\'. Larger sizes take vastly more time to draw, so be careful! Start small and THEN work your way up.');
+  }
+  $('#explModal').modal()
+}
 
-//TO DO:
-//Can we remove some of the recursion? make more lewpz?
+$('#grpSize').change(function(){
+  pxGrpSize = parseInt($('#grpSize').val);
+})
+$('#chainSize').change(function(){
+  markLen = parseInt($('#chainSize').val);
+})

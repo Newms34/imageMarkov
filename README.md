@@ -40,3 +40,8 @@ This is an experiment with [Markov chains](https://en.wikipedia.org/wiki/Markov_
  Q. It doesn't really look like anything!
  
  A. This isn't supposed to be the next Monet. It's an examination of the theory. Translation: I suck @ art.
+
+
+ Q. Can't I just run it off of github?
+
+ A. You could, but... then I'd have to delete it from github. Please don't. Running it off of github is gonna make them hate me (for the data rates involved). Don't make github hate me.
