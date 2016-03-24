@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Images with Markov Chain!</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+        Size:
+<select onchange="sz=this.value" id="">
+  <option value="small" selected>small</option>
+  <option value="medium">medium</option>
+  <option value="large">large</option>
+  <option value="icon">icon</option>
+</select>
+<br/>
+<input type='text' value='Potato' id='query'>
+<button onclick='getPics(1)'>
+  Search!
+</button>
+<hr/>
+<div id='picResBox'>
+
+</div>
+<canvas id='canv'></canvas>
+        <script src='https://code.jquery.com/jquery-1.11.1.js'></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+        <script src='./js/main.js'></script>
+</body>
+
+</html>

@@ -1,0 +1,165 @@
+var sz = 'small',
+    imgUrls = [],
+    canvas = document.getElementById('canv'),
+    currImg = new Image(),
+    currPxData,
+    imNum = 0,
+    googleOkay = false,
+    imgArr = [],
+    pxGrpSize = 2,
+    markObjs = {},
+    markLen = 5000,
+    currMarkNum = 0,
+    fullMarks = '';
+//googleOkay controls whether we're using the google api or not. If the API says 403 (we've overused it), we use lorempixel instead.
+//imgArr is an array holding the  objects which represent each pixel.
+//pxGrpSize is how many pixels we group together as the markov 'words'. larger groups means a better chance of meaningful predictions, but at the same time
+//also means a chance of no matches whatsoever.
+var ctx = canvas.getContext('2d');
+currImg.crossOrigin = 'anonymous';
+var getPics = function(num) {
+    markObjs = {};
+    imgArr = [];
+    imNum = 0;
+    currMarkNum = 0;
+    fullMarks = '';
+    if (googleOkay) {
+        console.log('using google!')
+        var query = $('#query').val()
+        num = parseInt(num);
+        if (num == 1) {
+            imNum = 0;
+            $('#picResBox').html('');
+            imgUrls = [];
+        }
+        var theUrl = 'https://www.googleapis.com/customsearch/v1?key=AIzaSyAKJJLiYq5NUL5GIgNSv_akeceClwi7MPk&cx=13117340402592336685:p37mtp7h38a&searchType=image&start=' + num + '&imgSize=' + sz + '&q=' + query;
+        $.get(theUrl, function(res) {
+            for (var i = 0; i < res.items.length; i++) {
+                if ((res.items[i].image.height / res.items[i].image.width) > .9 && (res.items[i].image.height / res.items[i].image.width) < 1.1) {
+                    //we only one images that are vaguely square.
+                    imgUrls.push(res.items[i].link);
+                }
+            }
+            if (!num || num < 50) {
+                num += 10;
+                getPics(num)
+            } else {
+                currImg.src = imgUrls[imNum];
+            }
+        })
+    } else {
+        //using lorempixel! 
+        console.log('using lorempixel!')
+        imgUrls = ['http://lorempixel.com/80/80/people/', 'http://lorempixel.com/80/80/nature/', 'http://lorempixel.com/80/80/food/'];
+        currImg.src = imgUrls[imNum];
+    }
+}
+currImg.addEventListener("load", function() {
+    // execute drawImage statements here
+    ctx.drawImage(currImg, 0, 0, canvas.width, canvas.height);
+    var isFF = navigator.userAgent.indexOf('Firefox') !== -1;
+    if (isFF) {
+        getPx(currImg);
+    } else {
+        //this demo wont work in anything but FF, due to restraints on dirty canvases (hawt).
+        alert('Please use Firefox for this demo!');
+    }
+});
+var getPx = function(currImg) {
+    var h = currImg.height,
+        w = currImg.width,
+        x = 0,
+        y = 0;
+    var imgData = ctx.getImageData(x, y, w, h).data;
+    imgArr = []; //clear the array
+    for (var i = 0; i < imgData.length - 4; i += 3) {
+        imgArr.push({
+            r: imgData[i],
+            g: imgData[i + 1],
+            b: imgData[i + 2],
+        })
+    }
+    var toMark = []; //array we'll send to markov chain generators
+    for (i = 0; i < imgArr.length - (pxGrpSize - 1); i += pxGrpSize) {
+        var strToAdd = '';
+        for (var j = 0; j < pxGrpSize; j++) {
+            strToAdd += '_' + imgArr[j + i].r + '@' + imgArr[j + i].g + '@' + imgArr[j + i].b;
+        }
+        toMark.push(strToAdd);
+    }
+    generateMarkov(toMark);
+}
+var generateMarkov = function(arr) {
+    //for each element in the chain, find the +1 element
+    for (var i = 0; i < arr.length; i++) {
+        if (!markObjs[arr[i]]) {
+            //if this is the first time we've seen this 'word', add it to our object.
+            markObjs[arr[i]] = {};
+        }
+        //now we look at the following 'word' to see wot it says
+        if (!markObjs[arr[i]][arr[i + 1]]) {
+            //have not seen this follower before.
+            markObjs[arr[i]][arr[i + 1]] = 1;
+        } else {
+            markObjs[arr[i]][arr[i + 1]]++;
+        }
+    }
+    console.log('markObjs after this image', markObjs)
+    imNum++;
+    if (imgUrls[imNum]) {
+        currImg.src = imgUrls[imNum];
+    } else {
+        //no more pics to analyze, so we can go ahead and make the markov-generated string.
+        var seed = Object.keys(markObjs)[Math.floor(Math.random() * Object.keys(markObjs).length)]; //pick a random start seed
+        doMark(seed);
+    }
+}
+var doMark = function(seed) {
+    for (currMark = 0; currMark < markLen; currMark++) {
+        fullMarks += seed;
+        var theWord = markObjs[seed];
+        console.log(theWord, seed, markObjs)
+        var theWordKeys = Object.keys(theWord),
+            finalFollow = [];
+        for (var i = 0; i < theWordKeys.length; i++) {
+            for (var j = 0; j < theWord[theWordKeys[i]]; j++) {
+                //basically, we push the follower into the finalFollow array repeatedly,
+                //by its frequency. More frequent followers are pushed in more
+                //this increases their chance of being chosen at random!
+                finalFollow.push(theWordKeys[i])
+            }
+        }
+        seed = finalFollow[Math.floor(Math.random() * finalFollow.length)];
+        if (!markObjs[seed]) {
+            seed = Object.keys(markObjs)[Math.floor(Math.random() * Object.keys(markObjs).length)];
+        }
+    }
+    console.log('markov generated:', fullMarks)
+    paintImage();
+}
+
+var paintImage = function() {
+    //this function actually draws the pixels;
+    var w = canvas.width,
+        h = canvas.height,
+        x = 0,
+        y = 0,
+        pix = fullMarks.split('_');
+    pix.shift();
+    //first, split the chain. Chop off initial element since it's blank
+    console.log('pix', pix)
+        //now, for each pixel, take its rgb value (by splitting at "@"), and draw a pixel of this val
+    for (var i = 0; i < pix.length; i++) {
+        var currRGB = pix[i].split('@');
+        ctx.fillStyle = "rgb(" + currRGB[0] + "," + currRGB[1] + "," + currRGB[2] + ")";
+        ctx.fillRect(x, y, 1, 1);
+        x++;
+        if (x >= w-4) {
+            y++;
+            x = 0;
+        }
+    }
+};
+
+//TO DO:
+//Can we remove some of the recursion? make more lewpz?
