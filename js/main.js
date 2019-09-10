@@ -33,7 +33,7 @@ var getPics = function(num) {
         imgUrls = [];
     }
     var theUrl = 'https://www.googleapis.com/customsearch/v1?key=AIzaSyAKJJLiYq5NUL5GIgNSv_akeceClwi7MPk&cx=13117340402592336685:p37mtp7h38a&searchType=image&start=' + num + '&imgSize=' + sz + '&q=' + query;
-    theUrl='invalid'
+    // theUrl='invalid'
     $.get(theUrl).success(function(res) {
         for (var i = 0; i < res.items.length; i++) {
             if ((res.items[i].image.height / res.items[i].image.width) > .9 && (res.items[i].image.height / res.items[i].image.width) < 1.1) {
